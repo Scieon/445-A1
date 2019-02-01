@@ -1,5 +1,11 @@
+import java.io.*;
+import java.net.Socket;
+import java.net.URL;
+
 public class Httpc {
 
+    private final String USER_AGENT = "Concordia-HTTP/1.0";
+    private final int PORT = 80;
 
     public static void main(String[] args) {
         new Httpc().run(args);
@@ -14,6 +20,46 @@ public class Httpc {
             } else if (args.length == 2) {
                 httpc.help(args[1]);
             }
+        }
+
+        try {
+            if (args[0].equals("get")) {
+                httpc.sendGet(args[1]);
+            }
+        } catch (Exception e) { // todo handle error
+            System.out.println("something went wrong");
+        }
+    }
+
+    private void sendGet(String url) throws Exception {
+        URL urlObj = new URL(url);
+        String hostname = urlObj.getHost();
+
+        Socket s = new Socket(hostname, PORT);
+        PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+
+        out.println("GET /get?course=networking&assignment=1 HTTP/1.0");
+        out.println("Host: " + hostname);
+        out.println("User-agent: " + USER_AGENT);
+//        out.println("Connection: Close");
+        out.println();
+
+        // Read server response
+        StringBuilder sb = new StringBuilder(8096);
+        boolean loop = true;
+
+        // todo read response correctly
+        while (loop) {
+            if (in.ready()) {
+                int i = 0;
+                while (i != -1) {
+                    i = in.read();
+                    sb.append((char) i);
+                }
+                loop = false;
+            }
+            System.out.println(sb.toString());
         }
     }
 
