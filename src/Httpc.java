@@ -31,8 +31,10 @@ public class Httpc {
             if (args[0].equals("get")) {
                 getHeaderArguments(args);
                 sendGet(url, args[1].equals("-v"));
-            } else if (args[0].equals("post")) {
-                sendPost(url);
+            } 
+
+            if (args[0].equals("post")) {
+                sendPost(url, args[1].equals("-v"));
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -110,7 +112,7 @@ public class Httpc {
         return sb;
     }
 
-   private void sendPost(String url) throws Exception {
+   private void sendPost(String url, boolean verbose) throws Exception {
         URL urlObj = new URL(url);
         String hostname = urlObj.getHost();
 
@@ -132,14 +134,14 @@ public class Httpc {
 
         // Read response and then print
         BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String line;
-        while ((line = br.readLine()) != null) {
-          System.out.println(line);
+        String response = getResponse(br).toString();
+        bw.close();
+
+        if (!verbose) {
+            response = response.substring(response.indexOf("{"));
         }
 
-        bw.close();
-        br.close();
-
+        System.out.println(response);
     }
 
     private void help() {
