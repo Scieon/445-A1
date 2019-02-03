@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.*;
 
 public class Httpc {
@@ -30,6 +31,8 @@ public class Httpc {
             if (args[0].equals("get")) {
                 getHeaderArguments(args);
                 sendGet(url, args[1].equals("-v"));
+            } else if (args[0].equals("post")) {
+                sendPost(url);
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -63,9 +66,10 @@ public class Httpc {
         PrintWriter out = new PrintWriter(s.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
-        out.println("GET /get?course=networking&assignment=1 HTTP/1.0");
-        out.println("Host: " + hostname);
-        out.println("User-agent: " + USER_AGENT);
+        out.print("GET /get?course=networking&assignment=1 HTTP/1.0\r\n");
+        out.print("Host: " + hostname + "\r\n");
+        out.print("User-agent: " + USER_AGENT + "\r\n");
+        out.print("\r\n");
 
         for (Map.Entry<String, String> entry : this.headerArgs.entrySet()) {
             String key = entry.getKey();
@@ -104,6 +108,38 @@ public class Httpc {
         }
 
         return sb;
+    }
+
+   private void sendPost(String url) throws Exception {
+        URL urlObj = new URL(url);
+        String hostname = urlObj.getHost();
+
+        Socket socket = new Socket(hostname, PORT);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
+        String data = "{\"Assignment\": 1}";       // TODO : General case to handle -d & -f
+
+        // HTTP Headers & Request
+        bw.write("POST "+ urlObj.getPath() +" HTTP/1.0\r\n");
+        bw.write("Host: " + hostname + "\r\n");
+        bw.write("User-agent: " + USER_AGENT + "\r\n");
+        bw.write("Content-Type: application/json\r\n");                 //Type must be added as -h
+        bw.write("Content-Length: "+ data.length() +"\r\n");
+        bw.write("\r\n");
+ 
+        // Send Data 
+        bw.write(data);
+        bw.flush();
+
+        // Read response and then print
+        BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String line;
+        while ((line = br.readLine()) != null) {
+          System.out.println(line);
+        }
+
+        bw.close();
+        br.close();
+
     }
 
     private void help() {
