@@ -71,14 +71,13 @@ public class Httpc {
         out.print("GET /get?course=networking&assignment=1 HTTP/1.0\r\n");
         out.print("Host: " + hostname + "\r\n");
         out.print("User-agent: " + USER_AGENT + "\r\n");
-        out.print("\r\n");
 
         for (Map.Entry<String, String> entry : this.headerArgs.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            out.println(key + ": " + value);
+            out.print(key + ": " + value + "\r\n");
         }
-//        out.println("Connection: Close");
+        out.print("\r\n");
         out.println();
 
         // Read server response
