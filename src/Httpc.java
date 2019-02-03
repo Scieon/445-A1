@@ -27,11 +27,11 @@ public class Httpc {
 
         try {
             String url = args[args.length - 1];
+            getHeaderArguments(args);
 
             if (args[0].equals("get")) {
-                getHeaderArguments(args);
                 sendGet(url, args[1].equals("-v"));
-            } 
+            }
 
             if (args[0].equals("post")) {
                 sendPost(url, args[1].equals("-v"));
@@ -49,11 +49,21 @@ public class Httpc {
     private void getHeaderArguments(String args[]) {
         List<String> argsList = new ArrayList<>(Arrays.asList(args));
 
-        if (args[0].equals("get") && args[1].equals("-h") || args[1].equals("-v") && args[2].equals("-h")) {
+        int endOfHeaders = args.length - 1; // Stop at url
+
+        if (argsList.indexOf("-f") != -1) {
+            endOfHeaders = argsList.indexOf("-f");
+        }
+
+        if (argsList.indexOf("-d") != -1) {
+            endOfHeaders = argsList.indexOf("-d");
+        }
+
+        if (args[1].equals("-h") || args[1].equals("-v") && args[2].equals("-h")) {
             int index = argsList.indexOf("-h");
 
-            // Begin after '-h' and get everything after except URL
-            for (index += 1; index < args.length - 1; index++) {
+            // Begin after '-h' and all the headers stop at -f -d or url
+            for (index += 1; index < endOfHeaders; index++) {
                 String[] header = args[index].split(":");
                 headerArgs.put(header[0], header[1]);
             }
@@ -111,7 +121,7 @@ public class Httpc {
         return sb;
     }
 
-   private void sendPost(String url, boolean verbose) throws Exception {
+    private void sendPost(String url, boolean verbose) throws Exception {
         URL urlObj = new URL(url);
         String hostname = urlObj.getHost();
 
@@ -120,14 +130,21 @@ public class Httpc {
         String data = "{\"Assignment\": 1}";       // TODO : General case to handle -d & -f
 
         // HTTP Headers & Request
-        bw.write("POST "+ urlObj.getPath() +" HTTP/1.0\r\n");
+        bw.write("POST " + urlObj.getPath() + " HTTP/1.0\r\n");
         bw.write("Host: " + hostname + "\r\n");
         bw.write("User-agent: " + USER_AGENT + "\r\n");
-        bw.write("Content-Type: application/json\r\n");                 //Type must be added as -h
-        bw.write("Content-Length: "+ data.length() +"\r\n");
+
+        for (Map.Entry<String, String> entry : this.headerArgs.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            bw.write(key + ": " + value + "\r\n");
+        }
+//        bw.write("Content-Type: application/json\r\n");                 //Type must be added as -h
+
+        bw.write("Content-Length: " + data.length() + "\r\n");
         bw.write("\r\n");
- 
-        // Send Data 
+
+        // Send Data
         bw.write(data);
         bw.flush();
 
