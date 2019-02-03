@@ -31,8 +31,8 @@ public class Httpc {
                 getHeaderArguments(args);
                 sendGet(url, args[1].equals("-v"));
             }
-        } catch (Exception e) { // todo handle error
-            System.out.println("something went wrong");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
