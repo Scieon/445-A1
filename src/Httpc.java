@@ -1,37 +1,61 @@
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.util.*;
 
 public class Httpc {
 
     private final String USER_AGENT = "Concordia-HTTP/1.0";
     private final int PORT = 80;
 
+    private Map<String, String> headerArgs = new HashMap<>();
+
     public static void main(String[] args) {
         new Httpc().run(args);
     }
 
     private void run(String[] args) {
-        Httpc httpc = new Httpc();
 
         if (args[0].equals("help")) {
             if (args.length == 1) {
-                httpc.help();
+                help();
             } else if (args.length == 2) {
-                httpc.help(args[1]);
+                help(args[1]);
             }
         }
 
         try {
+            String url = args[args.length - 1];
+
             if (args[0].equals("get")) {
-                httpc.sendGet(args[1]);
+                getHeaderArguments(args);
+                sendGet(url, args[1].equals("-v"));
             }
         } catch (Exception e) { // todo handle error
             System.out.println("something went wrong");
         }
     }
 
-    private void sendGet(String url) throws Exception {
+    /**
+     * Retrieve all header arguments
+     *
+     * @param args cli input
+     */
+    private void getHeaderArguments(String args[]) {
+        List<String> argsList = new ArrayList<>(Arrays.asList(args));
+
+        if (args[0].equals("get") && args[1].equals("-h") || args[1].equals("-v") && args[2].equals("-h")) {
+            int index = argsList.indexOf("-h");
+
+            // Begin after '-h' and get everything after except URL
+            for (index += 1; index < args.length - 1; index++) {
+                String[] header = args[index].split(":");
+                headerArgs.put(header[0], header[1]);
+            }
+        }
+    }
+
+    private void sendGet(String url, boolean verbose) throws Exception {
         URL urlObj = new URL(url);
         String hostname = urlObj.getHost();
 
@@ -42,25 +66,44 @@ public class Httpc {
         out.println("GET /get?course=networking&assignment=1 HTTP/1.0");
         out.println("Host: " + hostname);
         out.println("User-agent: " + USER_AGENT);
+
+        for (Map.Entry<String, String> entry : this.headerArgs.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            out.println(key + ": " + value);
+        }
 //        out.println("Connection: Close");
         out.println();
 
         // Read server response
+        String response = getResponse(in).toString();
+
+        if (!verbose) {
+            response = response.substring(response.indexOf("{"));
+        }
+
+        System.out.println(response);
+    }
+
+    private StringBuilder getResponse(BufferedReader in) throws Exception {
         StringBuilder sb = new StringBuilder(8096);
         boolean loop = true;
 
-        // todo read response correctly
         while (loop) {
             if (in.ready()) {
-                int i = 0;
-                while (i != -1) {
-                    i = in.read();
-                    sb.append((char) i);
+                String line = in.readLine();
+                while (line != null) {
+                    if (!line.isEmpty()) {
+                        sb.append(line);
+                        sb.append("\n");
+                    }
+                    line = in.readLine();
                 }
                 loop = false;
             }
-            System.out.println(sb.toString());
         }
+
+        return sb;
     }
 
     private void help() {
@@ -78,9 +121,9 @@ public class Httpc {
         if (method.equals("get")) {
             System.out.println("usage: httpc get [-v] [-h key:value] URL\n" +
                     "Get executes a HTTP GET request for a given URL.\n" +
-                    "-v Prints the detail of the response such as protocol, status,\n" +
+                    "   -v Prints the detail of the response such as protocol, status,\n" +
                     "and headers.\n" +
-                    "-h key:value Associates headers to HTTP Request with the format\n" +
+                    "   -h key:value Associates headers to HTTP Request with the format\n" +
                     "'key:value'.");
         }
 
