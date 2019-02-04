@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.*;
 
 public class Httpc {
@@ -10,6 +9,7 @@ public class Httpc {
     private final int PORT = 80;
 
     private Map<String, String> headerArgs = new HashMap<>();
+    private String data;
 
     public static void main(String[] args) {
         new Httpc().run(args);
@@ -26,6 +26,7 @@ public class Httpc {
         }
 
         try {
+            printArgs(args);
             String url = args[args.length - 1];
             getHeaderArguments(args);
 
@@ -34,12 +35,30 @@ public class Httpc {
             }
 
             if (args[0].equals("post")) {
+                setData(args);
                 sendPost(url, args[1].equals("-v"));
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
+
+    // TODO REMOVE TEST PRINT
+    private void printArgs(String[] args) {
+        System.out.println("_____");
+        for (int i = 0; i < args.length; i++) {
+            System.out.println(i + args[i]);
+        }
+        System.out.println("_____");
+    }
+    private void setData(String[] args) {
+        List<String> argsList = new ArrayList<>(Arrays.asList(args));
+
+        if (this.headerArgs.get("Content-Type").equals("application/json") || this.headerArgs.get("Content-Type").equals("application/x-www-form-urlencoded")) {
+            this.data = argsList.get(argsList.indexOf("-d") + 1);
+        }
+    }
+
 
     /**
      * Retrieve all header arguments
@@ -127,7 +146,7 @@ public class Httpc {
 
         Socket socket = new Socket(hostname, PORT);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
-        String data = "{\"Assignment\": 1}";       // TODO : General case to handle -d & -f
+        String data = this.data;
 
         // HTTP Headers & Request
         bw.write("POST " + urlObj.getPath() + " HTTP/1.0\r\n");
@@ -139,7 +158,6 @@ public class Httpc {
             String value = entry.getValue();
             bw.write(key + ": " + value + "\r\n");
         }
-//        bw.write("Content-Type: application/json\r\n");                 //Type must be added as -h
 
         bw.write("Content-Length: " + data.length() + "\r\n");
         bw.write("\r\n");
@@ -185,12 +203,12 @@ public class Httpc {
             System.out.println("usage: httpc post [-v] [-h key:value] [-d inline-data] [-f file] URL\n" +
                     "Post executes a HTTP POST request for a given URL with inline data or from\n" +
                     "file.\n" +
-                    "-v Prints the detail of the response such as protocol, status,\n" +
+                    "   -v Prints the detail of the response such as protocol, status,\n" +
                     "and headers.\n" +
-                    "-h key:value Associates headers to HTTP Request with the format\n" +
+                    "   -h key:value Associates headers to HTTP Request with the format\n" +
                     "'key:value'.\n" +
-                    "-d string Associates an inline data to the body HTTP POST request.\n" +
-                    "-f file Associates the content of a file to the body HTTP POST\n" +
+                    "   -d string Associates an inline data to the body HTTP POST request.\n" +
+                    "   -f file Associates the content of a file to the body HTTP POST\n" +
                     "request.\n" +
                     "Either [-d] or [-f] can be used but not both.");
         }
