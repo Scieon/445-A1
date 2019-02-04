@@ -10,6 +10,7 @@ public class Httpc {
 
     private Map<String, String> headerArgs = new HashMap<>();
     private String data;
+    private boolean fileWrite = false;
 
     public static void main(String[] args) {
         new Httpc().run(args);
@@ -28,12 +29,18 @@ public class Httpc {
         }
 
         try {
-            printArgs(args);
             String url = args[args.length - 1];
             getHeaderArguments(args);
 
+            String fileOutput = "";
+            if (argsList.contains("-o")) {
+                fileWrite = true;
+                fileOutput = argsList.get(argsList.indexOf("-o") + 1);
+                url = args[argsList.indexOf("-o") - 1];
+            }
+
             if (args[0].equals("get")) {
-                sendGet(url, args[1].equals("-v"));
+                sendGet(url, args[1].equals("-v"), fileOutput);
             }
 
             if (args[0].equals("post")) {
@@ -45,20 +52,11 @@ public class Httpc {
                 } else if (argsList.contains("-f")) {
                     parseFile(argsList.get(argsList.indexOf("-f") + 1));
                 }
-                sendPost(url, args[1].equals("-v"));
+                sendPost(url, args[1].equals("-v"), fileOutput);
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    // TODO REMOVE TEST PRINT
-    private void printArgs(String[] args) {
-        System.out.println("_____");
-        for (int i = 0; i < args.length; i++) {
-            System.out.println(i + args[i]);
-        }
-        System.out.println("_____");
     }
 
     private void parseFile(String file) {
@@ -91,6 +89,10 @@ public class Httpc {
 
         int endOfHeaders = args.length - 1; // Stop at url
 
+        if(argsList.contains("-o")) {
+            endOfHeaders = argsList.indexOf("-o") - 1;
+        }
+
         if (argsList.indexOf("-f") != -1) {
             endOfHeaders = argsList.indexOf("-f");
         }
@@ -110,7 +112,7 @@ public class Httpc {
         }
     }
 
-    private void sendGet(String url, boolean verbose) throws Exception {
+    private void sendGet(String url, boolean verbose, String fileName) throws Exception {
         URL urlObj = new URL(url);
         String hostname = urlObj.getHost();
 
@@ -137,7 +139,18 @@ public class Httpc {
             response = response.substring(response.indexOf("{"));
         }
 
-        System.out.println(response);
+        if (fileWrite) {
+            try{
+                out = new PrintWriter(fileName);
+                out.println(response);
+                out.close();
+            }
+            catch(FileNotFoundException e){
+                throw new FileNotFoundException("Error opening the file out.txt");
+            }
+        } else {
+            System.out.println(response);
+        }
     }
 
     private StringBuilder getResponse(BufferedReader in) throws Exception {
@@ -161,7 +174,7 @@ public class Httpc {
         return sb;
     }
 
-    private void sendPost(String url, boolean verbose) throws Exception {
+    private void sendPost(String url, boolean verbose, String fileName) throws Exception {
         URL urlObj = new URL(url);
         String hostname = urlObj.getHost();
 
@@ -196,7 +209,18 @@ public class Httpc {
             response = response.substring(response.indexOf("{"));
         }
 
-        System.out.println(response);
+        if (fileWrite) {
+            try{
+                PrintWriter out = new PrintWriter(fileName);
+                out.println(response);
+                out.close();
+            }
+            catch(FileNotFoundException e){
+                throw new FileNotFoundException("Error opening the file out.txt");
+            }
+        } else {
+            System.out.println(response);
+        }
     }
 
     private void help() {
