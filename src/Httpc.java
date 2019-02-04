@@ -17,6 +17,8 @@ public class Httpc {
 
     private void run(String[] args) {
 
+        List<String> argsList = new ArrayList<>(Arrays.asList(args));
+
         if (args[0].equals("help")) {
             if (args.length == 1) {
                 help();
@@ -35,7 +37,14 @@ public class Httpc {
             }
 
             if (args[0].equals("post")) {
-                setData(args);
+                if (argsList.contains("-f") && argsList.contains("-d")) {
+                    throw new Exception("Cannot have -f and -d");
+                }
+                if (argsList.contains("-d")) {
+                    setData(args);
+                } else if (argsList.contains("-f")) {
+                    parseFile(argsList.get(argsList.indexOf("-f") + 1));
+                }
                 sendPost(url, args[1].equals("-v"));
             }
         } catch (Exception e) {
@@ -51,6 +60,18 @@ public class Httpc {
         }
         System.out.println("_____");
     }
+
+    private void parseFile(String file) {
+        // pass the path to the file as a parameter
+        try {
+            Scanner sc = new Scanner(new FileInputStream("../" + file));
+            this.data = sc.nextLine();
+            sc.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     private void setData(String[] args) {
         List<String> argsList = new ArrayList<>(Arrays.asList(args));
 
