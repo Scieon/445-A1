@@ -120,7 +120,7 @@ public class Httpc {
         PrintWriter out = new PrintWriter(s.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
-        out.print("GET /get?course=networking&assignment=1 HTTP/1.0\r\n");
+        out.print("GET " +  urlObj.getPath() + " HTTP/1.0\r\n");
         out.print("Host: " + hostname + "\r\n");
         out.print("User-agent: " + USER_AGENT + "\r\n");
 
