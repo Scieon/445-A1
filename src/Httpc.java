@@ -6,7 +6,7 @@ import java.util.*;
 public class Httpc {
 
     private final String USER_AGENT = "Concordia-HTTP/1.0";
-    private final int PORT = 80;
+    private final int PORT = 999;
 
     private Map<String, String> headerArgs = new HashMap<>();
     private String data;
@@ -136,7 +136,11 @@ public class Httpc {
         String response = getResponse(in).toString();
 
         if (!verbose) {
-            response = response.substring(response.indexOf("{"));
+            try {
+                response = response.substring(response.indexOf("{"));
+            } catch(StringIndexOutOfBoundsException e) {
+
+            }
         }
 
         if (fileWrite) {
