@@ -12,7 +12,7 @@ public class Httpfs {
     private final String HTTP_SUCCESS_200 = "HTTP/1.1 200 OK\r\n";
     private boolean debug = false;
     private int port = 999; // todo change to 8080 for submission
-    private String PATH = "./src/httpfs/data/";
+    private String path = ".\\src\\httpfs\\data\\";
 
     public static void main(String[] args) throws IOException {
         new Httpfs().run(args);
@@ -25,17 +25,17 @@ public class Httpfs {
 
         System.out.println("Server is running...");
 
-
         debug = true; // todo set debug through args
         // todo Also set PORT!
-        // todo set port if specified
+        // todo add path if specified
 
         while (true) {
             socketConnection = serverSocket.accept();
             InputStreamReader in = new InputStreamReader(socketConnection.getInputStream());
             BufferedReader reader = new BufferedReader(in);
+            PrintWriter out = new PrintWriter(socketConnection.getOutputStream(), true);
             String line = reader.readLine();
-            String urlPath = "";
+            String urlPath = null;
 
             while (line != null && !line.isEmpty()) {
                 if (line.contains("GET") || line.contains("POST")) {
@@ -44,33 +44,59 @@ public class Httpfs {
                 line = reader.readLine();
             }
 
-            if (!urlPath.equals("")) {
-                PrintWriter out = new PrintWriter(socketConnection.getOutputStream(), true);
-                handleGetPath(out, serverSocket, urlPath);
+            if (urlPath != null && !urlPath.equals(" ")) {
+                handleGetPath(out, urlPath);
+                socketConnection.close();
+            } else if (urlPath != null && urlPath.equals(" ")) {
+                handleDefaultGet(out);
                 socketConnection.close();
             }
         }
     }
 
+    // todo (All this does right now is print out files, do we need to return them??)
+    private void handleDefaultGet(PrintWriter out) {
+        // print list of files
+        File f = new File(path); // current directory
+
+        File[] files = f.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    if (debug) {
+                        System.out.println("Inside Directory: " + file);
+                    }
+                } else {
+                    String pathName = file.toString();
+                    String filename = pathName.substring(path.length());
+                    if (debug) {
+                        System.out.println("Found file: " + filename);
+                    }
+                }
+            }
+        }
+
+        out.print(HTTP_SUCCESS_200);
+        out.print("\r\n");
+        out.println();
+    }
+
     /**
      * Handles GET route with resource
      *
-     * @param out output stream
-     * @param serverSocket
+     * @param out     output stream
      * @param urlPath file path resource
      */
-    private void handleGetPath(PrintWriter out, ServerSocket serverSocket, String urlPath) {
+    private void handleGetPath(PrintWriter out, String urlPath) {
         if (printFileContent(urlPath)) {
             out.print(HTTP_SUCCESS_200);
             out.print("\r\n");
             out.println();
-//            socketConnection.close();
         } else {
             // File does not exist
             out.print(HTTP_ERROR_404);
             out.print("\r\n");
             out.println();
-//            socketConnection.close();
         }
     }
 
@@ -83,7 +109,7 @@ public class Httpfs {
     private boolean printFileContent(String filePath) {
         try {
             filePath = filePath.trim();
-            Scanner sc = new Scanner(new FileInputStream(PATH + filePath + ".txt"));
+            Scanner sc = new Scanner(new FileInputStream(path + filePath + ".txt"));
             String line = sc.nextLine();
 
             while (sc.hasNextLine()) {
